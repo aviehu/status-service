@@ -1,0 +1,23 @@
+.vscode/
+node_modules/
+trash/
+static/main.js
+static/main.js.LICENSE.txt
+
+tags
+
+# vim swap files
+.*.sw?
+
+# Custom env files
+.env-*
+
+.idea/
+
+*.pdf
+*.csv
+
+*.error.log
+*.info.log
+dist/
+.env
