@@ -1,76 +1,48 @@
 import {config} from 'dotenv';
-import mqtt from 'mqtt'
-import express from 'express';
+import mqttClient, {StatusMessage} from './src/mqttClient'
+import httpServer from "./src/httpServer";
 
 config()
 
-const mqttClient = mqtt.connect(process.env.MQTT_URL, {username: process.env.MQTT_USERNAME, password: process.env.MQTT_PASSWORD});
-const server = express();
-const port = parseInt(process.env.HTTP_PORT)
 const ttl = parseInt(process.env.STATUS_TTL)
 
-type StreamerStatus = {
+export type StreamerStatus = {
     status: string,
     timestamp: Date,
-}
-
-type StatusMessage = {
-    uuid: string,
-    status: string,
     controllerNodePriority?: number
 }
 
 const timeoutMap: Map<string, NodeJS.Timeout> = new Map()
 const streamerMap : Map<string, StreamerStatus> = new Map()
 
-function getOfflineStreamer() : StreamerStatus {
-    return {
-        status: 'offline', timestamp: new Date()
-    }
+function setStatus(statusMessage: StatusMessage) {
+    const {status, controllerNodePriority,uuid} = statusMessage
+    streamerMap.set(uuid, {status, controllerNodePriority, timestamp: new Date()})
 }
 
-mqttClient.on("connect", () => {
-    console.log('connected to mqtt')
-});
-
-mqttClient.subscribe(process.env.MQTT_TOPIC, (error, ) => {
-    if (error) {
-        console.log('mqtt error')
-    }
-})
-
-mqttClient.on('message', (topic, payload) => {
-    const statusMessage : StatusMessage = JSON.parse(payload.toString())
-    console.log('message received', statusMessage)
-    const {uuid, status} = statusMessage
-    const newStatus : StreamerStatus = {status, timestamp: new Date()}
-    streamerMap.set(uuid, newStatus)
-    if (status === 'offline') {
-        return
-    }
+function setNewTimeout(uuid: string, callback: () => void) {
     const existingTimeout = timeoutMap.get(uuid)
     if(existingTimeout) {
         clearTimeout(existingTimeout)
     }
     const timeout = setTimeout(() => {
-        console.log('expired', uuid)
-        const controllerNodePriority =  statusMessage.controllerNodePriority
-        mqttClient.publish(process.env.MQTT_TOPIC, JSON.stringify(controllerNodePriority ? {status: 'offline', uuid, controllerNodePriority } : {status: 'offline', uuid}))
+        const oldStatus = streamerMap.get(uuid)
+        const offlineStatus: StreamerStatus = {...oldStatus, status: 'offline'}
+        streamerMap.set(uuid, offlineStatus)
+        callback()
     }, ttl)
     timeoutMap.set(uuid, timeout)
-})
+}
 
-server.get('/:uuid', (req, res) => {
-    const { uuid } = req.params
+function getStreamerStatus(uuid: string): StreamerStatus {
     const streamerStatus = streamerMap.get(uuid)
     if (!streamerStatus) {
-        const offlineStatus = getOfflineStreamer()
+        const offlineStatus = { status: 'offline', timestamp: new Date() }
         streamerMap.set(uuid, offlineStatus)
-        res.json(offlineStatus)
+        return offlineStatus
     }
-    res.json(streamerStatus)
-});
+    return streamerStatus
+}
 
-server.listen(port, () => {
-    return console.log(`Express is listening at http://localhost:${port}`);
-});
+httpServer(getStreamerStatus)
+mqttClient(setStatus, setNewTimeout, getStreamerStatus)
