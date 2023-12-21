@@ -1,0 +1,16 @@
+title Status Flow
+
+participant Streamer
+participant MQTT Broker
+participant Status Service
+
+
+Streamer->MQTT Broker:Streamer Status message
+MQTT Broker->Status Service: Streamer Status message
+note over Status Service: add to map
+note over Status Service:add or reset the offline timeout
+group update status to fleet [status changed]
+Status Service->MQTT Broker:Fleet Status Message
+MQTT Broker->Websocket Service:Fleet Status Message
+Websocket Service->DLC Client:status update
+end

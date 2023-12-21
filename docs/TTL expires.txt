@@ -1,0 +1,7 @@
+title TTL expires
+
+note over Status Service: TTL passed without status message
+note over Status Service:update status map with offline status
+Status Service->MQTT Broker:Fleet Status message
+MQTT Broker->Websocket Service:Fleet Status message
+Websocket Service->DLC client:status update
