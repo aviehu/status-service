@@ -8,7 +8,7 @@ const ttl = parseInt(process.env.STATUS_TTL)
 
 export type StreamerStatus = {
     status: string,
-    timestamp: Date,
+    timestamp?: Date,
     controllerNodePriority?: number
 }
 
@@ -26,9 +26,8 @@ function setNewTimeout(uuid: string, callback: () => void) {
         clearTimeout(existingTimeout)
     }
     const timeout = setTimeout(() => {
-        const oldStatus = streamerMap.get(uuid)
-        const offlineStatus: StreamerStatus = {...oldStatus, status: 'offline'}
-        streamerMap.set(uuid, offlineStatus)
+        streamerMap.delete(uuid)
+        console.log(`${uuid} has gone offline at ${new Date()}`)
         callback()
     }, ttl)
     timeoutMap.set(uuid, timeout)
@@ -37,12 +36,17 @@ function setNewTimeout(uuid: string, callback: () => void) {
 function getStreamerStatus(uuid: string): StreamerStatus {
     const streamerStatus = streamerMap.get(uuid)
     if (!streamerStatus) {
-        const offlineStatus = { status: 'offline', timestamp: new Date() }
-        streamerMap.set(uuid, offlineStatus)
-        return offlineStatus
+        return { status: 'offline' }
     }
     return streamerStatus
 }
 
-httpServer(getStreamerStatus)
+function getStreamerStatuses(uuids: string[]): Record<string, StreamerStatus> {
+    return uuids.reduce((previousValue: Record<string, StreamerStatus> , currentValue: string,) => {
+        previousValue[currentValue] = streamerMap.get(currentValue) || {status: 'offline'}
+        return previousValue
+    }, {})
+}
+
+httpServer(getStreamerStatuses)
 mqttClient(setStatus, setNewTimeout, getStreamerStatus)

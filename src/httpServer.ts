@@ -1,29 +1,20 @@
-import express from 'express';
 import {StreamerStatus} from "../index";
-import bodyParser from "body-parser";
+import fastify from 'fastify'
 
-export default function httpServer(getStreamerStatus: (uuid: string) => StreamerStatus) {
-    const server = express();
+type BulkResponse = {200: Record<string, StreamerStatus>}
+type BulkQuery = { uuids: string[]}
+export default function httpServer(getStreamerStatuses: (uuid: string[]) => Record<string,StreamerStatus>) {
+    const server = fastify()
     const port = parseInt(process.env.HTTP_PORT)
 
-    server.use(bodyParser.json())
-
-    server.get('/:uuid', (req, res) => {
-        const {uuid} = req.params
-        const streamerStatus = getStreamerStatus(uuid)
-        res.json(streamerStatus)
-    });
-
-    server.post('/bulk', (req, res) => {
-        const uuids : string[] = req.body
-        const streamerStatuses = uuids.map((uuid) => {
-            return {uuid, ...getStreamerStatus(uuid)}
-        })
-        res.json(streamerStatuses)
+    server.get<{Querystring: BulkQuery, Reply: BulkResponse}>('/', (req, res) => {
+        const { uuids } = req.query
+        const streamerStatuses = getStreamerStatuses(uuids)
+        res.code(200).send(streamerStatuses)
     })
 
-    server.listen(port, () => {
-        return console.log(`Express is listening at http://localhost:${port}`);
+    server.listen({port}, () => {
+        return console.log(`Http server is listening at port ${port}`);
     });
 }
 
