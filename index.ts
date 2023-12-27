@@ -27,7 +27,7 @@ function setNewTimeout(uuid: string, callback: () => void) {
     }
     const timeout = setTimeout(() => {
         streamerMap.delete(uuid)
-        console.log(`${uuid} has gone offline at ${new Date()}`)
+            console.log(`${uuid} has gone offline at ${new Date()}`)
         callback()
     }, ttl)
     timeoutMap.set(uuid, timeout)

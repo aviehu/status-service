@@ -31,10 +31,10 @@ export default function mqttClient(
     mqttClient.on('message', (topic, payload) => {
         const messageString = payload.toString()
         const statusMessage : StatusMessage = JSON.parse(messageString)
-        console.log('message received', statusMessage)
         const {uuid, controllerNodePriority} = statusMessage
         const currentStatus = getStreamerStatus(uuid)
         if (currentStatus.status !== statusMessage.status) {
+            console.log(`new status received for ${uuid}`, statusMessage)
             const fleetMessage: FleetStatusMessage = {...statusMessage, type: 'streamer'}
             mqttClient.publish(process.env.MQTT_FLEET_TOPIC, JSON.stringify(fleetMessage))
         }

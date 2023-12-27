@@ -13,7 +13,7 @@ export default function httpServer(getStreamerStatuses: (uuid: string[]) => Reco
         res.code(200).send(streamerStatuses)
     })
 
-    server.listen({port}, () => {
+    server.listen({port, host: '0.0.0.0'}, () => {
         return console.log(`Http server is listening at port ${port}`);
     });
 }
