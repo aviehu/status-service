@@ -1,52 +1,61 @@
 import {config} from 'dotenv';
-import mqttClient, {StatusMessage} from './src/mqttClient'
+import mqttClient from './src/mqttClient'
 import httpServer from "./src/httpServer";
+import {MapSelector, MqttStatusMessage, Unit, UnitStatus, Uuid} from "./src/types";
 
 config()
 
 const ttl = parseInt(process.env.STATUS_TTL)
 
-export type StreamerStatus = {
-    status: string,
-    timestamp?: Date,
-    controllerNodePriority?: number
+const timeoutMap: Map<Unit, Map<string, NodeJS.Timeout>> = new Map()
+
+const mapSelector: MapSelector = {
+    streamer: new Map(),
+    relay: new Map(),
+    node: new Map
 }
 
-const timeoutMap: Map<string, NodeJS.Timeout> = new Map()
-const streamerMap : Map<string, StreamerStatus> = new Map()
-
-function setStatus(statusMessage: StatusMessage) {
+function setStatus(unit: Unit, statusMessage: MqttStatusMessage) {
     const {status, controllerNodePriority,uuid} = statusMessage
-    streamerMap.set(uuid, {status, controllerNodePriority, timestamp: new Date()})
+    mapSelector[unit].set(uuid, {status, timestamp: new Date(), controllerNodePriority})
 }
 
-function setNewTimeout(uuid: string, callback: () => void) {
-    const existingTimeout = timeoutMap.get(uuid)
+function setNewTimeout(unit:Unit, uuid: Uuid, callback: () => void) {
+    const unitMap = timeoutMap.get(unit)
+    if(!unitMap) {
+        timeoutMap.set(unit, new Map())
+    }
+    const existingTimeout = timeoutMap.get(unit).get(uuid)
     if(existingTimeout) {
         clearTimeout(existingTimeout)
     }
     const timeout = setTimeout(() => {
-        streamerMap.delete(uuid)
-            console.log(`${uuid} has gone offline at ${new Date()}`)
+        mapSelector[unit].delete(uuid)
         callback()
     }, ttl)
-    timeoutMap.set(uuid, timeout)
+    timeoutMap.get(unit).set(uuid, timeout)
 }
 
-function getStreamerStatus(uuid: string): StreamerStatus {
-    const streamerStatus = streamerMap.get(uuid)
-    if (!streamerStatus) {
+function getUnitStatus(unit: Unit, uuid: string): UnitStatus {
+    const unitStatus = mapSelector[unit].get(uuid)
+    if (!unitStatus) {
         return { status: 'offline' }
     }
-    return streamerStatus
+    return unitStatus
 }
 
-function getStreamerStatuses(uuids: string[]): Record<string, StreamerStatus> {
-    return uuids.reduce((previousValue: Record<string, StreamerStatus> , currentValue: string,) => {
-        previousValue[currentValue] = streamerMap.get(currentValue) || {status: 'offline'}
+function getUnitStatuses(unit: Unit, uuids: string[]): Record<string, UnitStatus> {
+    return uuids.reduce((previousValue: Record<string, UnitStatus> , currentValue: string,) => {
+        previousValue[currentValue] = mapSelector[unit].get(currentValue) || {status: 'offline'}
         return previousValue
     }, {})
 }
 
-httpServer(getStreamerStatuses)
-mqttClient(setStatus, setNewTimeout, getStreamerStatus)
+
+setInterval(() => {
+    console.log('streamers', mapSelector.streamer)
+    console.log('relay', mapSelector.relay)
+    console.log('node', mapSelector.node)
+}, 10000)
+httpServer(getUnitStatuses)
+mqttClient(setStatus, setNewTimeout, getUnitStatus)
