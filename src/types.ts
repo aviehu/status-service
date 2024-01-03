@@ -33,11 +33,11 @@ export type MqttFleetStatusMessage = MqttStatusMessage & {
     type: Unit
 }
 
-export type BulkResponse = {200: Record<string, UnitStatus>}
-
-export type BulkQuery = { uuids: string[]}
-
 export type Uuid = string
+
+export type BulkResponse = {200: Record<Uuid, UnitStatus>}
+
+export type BulkQuery = { uuids: Uuid[]}
 
 export function isUnit(unit: string): unit is Unit {
     return ['streamer', 'relay', 'node'].includes(unit)

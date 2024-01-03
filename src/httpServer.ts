@@ -1,13 +1,13 @@
 import fastify from 'fastify'
-import {BulkQuery, BulkResponse, Unit, UnitStatus} from "./types";
+import {BulkQuery, BulkResponse, Unit, UnitStatus, Uuid} from "./types";
 
-export default function httpServer(getUnitStatuses: (unit: Unit, uuid: string[]) => Record<string, UnitStatus>) {
+export default function httpServer(getUnitStatuses: (unit: Unit, uuid: Uuid[]) => Record<Uuid, UnitStatus>) {
     const server = fastify()
     const port = parseInt(process.env.HTTP_PORT)
 
     server.get<{Querystring: BulkQuery, Reply: BulkResponse}>('/streamer', (req, res) => {
+        console.log('streamer request')
         const { uuids } = req.query
-        console.log('streamer request', uuids)
         const streamerStatuses = getUnitStatuses('streamer', Array.isArray(uuids) ? uuids : [uuids])
         res.code(200).send(streamerStatuses)
     })
