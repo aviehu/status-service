@@ -9,7 +9,7 @@ export default function httpServer(getStreamerStatuses: (uuid: string[]) => Reco
 
     server.get<{Querystring: BulkQuery, Reply: BulkResponse}>('/', (req, res) => {
         const { uuids } = req.query
-        const streamerStatuses = getStreamerStatuses(uuids)
+        const streamerStatuses = getStreamerStatuses(Array.isArray(uuids) ? uuids : [uuids])
         console.log(streamerStatuses)
         res.code(200).send(streamerStatuses)
     })
