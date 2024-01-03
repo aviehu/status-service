@@ -1,5 +1,6 @@
 import mqtt, {IClientOptions} from 'mqtt'
 import {StreamerStatus} from "../index";
+import {subscribe} from "diagnostics_channel";
 
 export type StatusMessage = {
     uuid: string,
@@ -39,7 +40,9 @@ export default function mqttClient(
     mqttClient.subscribe(process.env.MQTT_TOPIC, { qos: 2 }, (error, ) => {
         if (error) {
             console.log(error)
+            return
         }
+        console.log(`subscribed to ${process.env.MQTT_TOPIC}`)
     })
 
     mqttClient.on('message', (topic, payload) => {
