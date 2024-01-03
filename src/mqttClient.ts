@@ -36,7 +36,7 @@ export default function mqttClient(
         console.log('connected to mqtt')
     });
 
-    mqttClient.subscribe(process.env.MQTT_TOPIC, (error, ) => {
+    mqttClient.subscribe(process.env.MQTT_TOPIC, { qos: 2 }, (error, ) => {
         if (error) {
             console.log(error)
         }
