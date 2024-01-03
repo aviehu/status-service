@@ -41,7 +41,7 @@ export default function mqttClient(
             if (error) {
                 return console.log(error)
             }
-            console.log(`subscribed to ${process.env.MQTT_TOPIC}`)
+            console.log(`subscribed to ${process.env.MQTT_TOPIC.replace('streamer', unit)}`)
         })
     })
 

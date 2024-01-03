@@ -36,7 +36,7 @@ function setNewTimeout(unit:Unit, uuid: Uuid, callback: () => void) {
     timeoutMap.get(unit).set(uuid, timeout)
 }
 
-function getUnitStatus(unit: Unit, uuid: string): UnitStatus {
+function getUnitStatus(unit: Unit, uuid: Uuid): UnitStatus {
     const unitStatus = mapSelector[unit].get(uuid)
     if (!unitStatus) {
         return { status: 'offline' }
@@ -44,8 +44,8 @@ function getUnitStatus(unit: Unit, uuid: string): UnitStatus {
     return unitStatus
 }
 
-function getUnitStatuses(unit: Unit, uuids: string[]): Record<string, UnitStatus> {
-    return uuids.reduce((previousValue: Record<string, UnitStatus> , currentValue: string,) => {
+function getUnitStatuses(unit: Unit, uuids: Uuid[]): Record<Uuid, UnitStatus> {
+    return uuids.reduce((previousValue: Record<Uuid, UnitStatus> , currentValue: Uuid,) => {
         previousValue[currentValue] = mapSelector[unit].get(currentValue) || {status: 'offline'}
         return previousValue
     }, {})

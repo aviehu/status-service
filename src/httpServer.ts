@@ -7,6 +7,7 @@ export default function httpServer(getUnitStatuses: (unit: Unit, uuid: string[])
 
     server.get<{Querystring: BulkQuery, Reply: BulkResponse}>('/streamer', (req, res) => {
         const { uuids } = req.query
+        console.log('streamer request', uuids)
         const streamerStatuses = getUnitStatuses('streamer', Array.isArray(uuids) ? uuids : [uuids])
         res.code(200).send(streamerStatuses)
     })
