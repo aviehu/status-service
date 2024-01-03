@@ -1,6 +1,5 @@
 import mqtt, {IClientOptions} from 'mqtt'
 import {StreamerStatus} from "../index";
-import {subscribe} from "diagnostics_channel";
 
 export type StatusMessage = {
     uuid: string,
