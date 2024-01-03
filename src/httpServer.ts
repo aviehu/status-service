@@ -8,10 +8,9 @@ export default function httpServer(getStreamerStatuses: (uuid: string[]) => Reco
     const port = parseInt(process.env.HTTP_PORT)
 
     server.get<{Querystring: BulkQuery, Reply: BulkResponse}>('/', (req, res) => {
-        console.log('incoming message')
         const { uuids } = req.query
-        console.log('status request for streamers', uuids)
         const streamerStatuses = getStreamerStatuses(uuids)
+        console.log(streamerStatuses)
         res.code(200).send(streamerStatuses)
     })
 
