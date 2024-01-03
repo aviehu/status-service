@@ -4,6 +4,7 @@ import httpServer from "./src/httpServer";
 
 config()
 
+
 const ttl = parseInt(process.env.STATUS_TTL)
 
 export type StreamerStatus = {
