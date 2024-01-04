@@ -30,7 +30,7 @@ export default function mqttClient(
         rejectUnauthorized: true
     }
     const mqttClient = mqtt.connect(`${process.env.MQTT_URL}:${process.env.MQTT_PORT}`, mqOptions)
-    const units = ['relay', 'streamer', 'node']
+    const units = ['streamer']
 
     mqttClient.on("connect", () => {
         console.log('connected to mqtt')
