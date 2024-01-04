@@ -63,7 +63,7 @@ export default function mqttClient(
         setStatus(unit, statusMessage)
         setNewTimeout(unit, uuid, () => {
             const offlineMessage: MqttFleetStatusMessage = {uuid, controllerNodePriority, status: 'offline', type: unit}
-            logger.info(`${unit} ${uuid} has changed to ${statusMessage.status}`)
+            logger.info(`${unit} ${uuid} has changed to offline`)
             mqttClient.publish(process.env.MQTT_FLEET_TOPIC, JSON.stringify(offlineMessage))
         })
     })

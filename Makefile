@@ -1,5 +1,8 @@
 rc:
-	./build_dev.sh
+	./docker/build_dev.sh
 
 prod:
-	./build_dev.sh
+	./docker/build_prod.sh
+
+tag:
+	./docker/tag_version.sh
