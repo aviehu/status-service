@@ -54,12 +54,12 @@ export default function mqttClient(
         // const currentStatus = getStreamerStatus(uuid)
         if (currentStatus.status !== statusMessage.status) {
             console.log(`${unit} ${uuid} has changed to ${statusMessage.status}`)
-            const fleetMessage: MqttFleetStatusMessage = {...statusMessage, type: 'streamer'}
+            const fleetMessage: MqttFleetStatusMessage = {...statusMessage, type: unit}
             mqttClient.publish(process.env.MQTT_FLEET_TOPIC, JSON.stringify(fleetMessage))
         }
         setStatus(unit, statusMessage)
         setNewTimeout(unit, uuid, () => {
-            const offlineMessage: MqttFleetStatusMessage = {uuid, controllerNodePriority, status: 'offline', type: 'streamer'}
+            const offlineMessage: MqttFleetStatusMessage = {uuid, controllerNodePriority, status: 'offline', type: unit}
             console.log(`${unit} ${uuid} has changed to ${statusMessage.status}`)
             mqttClient.publish(process.env.MQTT_FLEET_TOPIC, JSON.stringify(offlineMessage))
         })
