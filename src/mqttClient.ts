@@ -1,5 +1,6 @@
 import mqtt, {IClientOptions} from 'mqtt'
 import {isUnit, MqttFleetStatusMessage, MqttStatusMessage, StreamerStatus, Unit, Uuid} from "./types";
+import {Logger} from "winston";
 
 function generateUuid(entity: string = ""): Uuid {
     return entity + '-xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -20,8 +21,9 @@ function getUnitFromTopic(topic: string) : Unit {
 export default function mqttClient(
     setStatus: (unit: Unit, statusMessage: MqttStatusMessage) => void,
     setNewTimeout: (unit: Unit, uuid: Uuid, callback: () => void) => void,
-    getUnitStatus: (unit: Unit, uuid: Uuid) => StreamerStatus)
-{
+    getUnitStatus: (unit: Unit, uuid: Uuid) => StreamerStatus,
+    createServiceLogger: (service: string) => Logger
+) {
     const mqOptions: IClientOptions = {
         clientId: generateUuid(),
         username: process.env.MQTT_USERNAME,
@@ -31,17 +33,18 @@ export default function mqttClient(
     }
     const mqttClient = mqtt.connect(`${process.env.MQTT_URL}:${process.env.MQTT_PORT}`, mqOptions)
     const units = ['streamer']
+    const logger = createServiceLogger('Mqtt Client')
 
     mqttClient.on("connect", () => {
-        console.log('connected to mqtt')
+        logger.info('connected to mqtt')
     });
 
     units.forEach((unit) => {
         mqttClient.subscribe(process.env.MQTT_TOPIC.replace('streamer', unit), { qos: 2 }, (error, ) => {
             if (error) {
-                return console.log(error)
+                return logger.error(error)
             }
-            console.log(`subscribed to ${process.env.MQTT_TOPIC.replace('streamer', unit)}`)
+            logger.info(`subscribed to ${process.env.MQTT_TOPIC.replace('streamer', unit)}`)
         })
     })
 
@@ -53,14 +56,14 @@ export default function mqttClient(
         const currentStatus = getUnitStatus(unit, uuid)
         // const currentStatus = getStreamerStatus(uuid)
         if (currentStatus.status !== statusMessage.status) {
-            console.log(`${unit} ${uuid} has changed to ${statusMessage.status}`)
+            logger.info(`${unit} ${uuid} has changed to ${statusMessage.status}`)
             const fleetMessage: MqttFleetStatusMessage = {...statusMessage, type: unit}
             mqttClient.publish(process.env.MQTT_FLEET_TOPIC, JSON.stringify(fleetMessage))
         }
         setStatus(unit, statusMessage)
         setNewTimeout(unit, uuid, () => {
             const offlineMessage: MqttFleetStatusMessage = {uuid, controllerNodePriority, status: 'offline', type: unit}
-            console.log(`${unit} ${uuid} has changed to ${statusMessage.status}`)
+            logger.info(`${unit} ${uuid} has changed to ${statusMessage.status}`)
             mqttClient.publish(process.env.MQTT_FLEET_TOPIC, JSON.stringify(offlineMessage))
         })
     })

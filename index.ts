@@ -2,6 +2,7 @@ import {config} from 'dotenv';
 import mqttClient from './src/mqttClient'
 import httpServer from "./src/httpServer";
 import {MapSelector, MqttStatusMessage, Unit, UnitStatus, Uuid} from "./src/types";
+import winston, {Logger} from "winston";
 
 config()
 
@@ -13,6 +14,20 @@ const mapSelector: MapSelector = {
     streamer: new Map(),
     relay: new Map(),
     node: new Map
+}
+
+function createServiceLogger(service: string): Logger {
+    return winston.createLogger({
+        level: 'info',
+        format: winston.format.combine(
+            winston.format.timestamp(),
+            winston.format.json()
+        ),
+        defaultMeta: { service },
+        transports: [
+            new winston.transports.Console(),
+        ]
+    });
 }
 
 function setStatus(unit: Unit, statusMessage: MqttStatusMessage) {
@@ -51,11 +66,5 @@ function getUnitStatuses(unit: Unit, uuids: Uuid[]): Record<Uuid, UnitStatus> {
     }, {})
 }
 
-
-setInterval(() => {
-    console.log('streamers', mapSelector.streamer)
-    console.log('relay', mapSelector.relay)
-    console.log('node', mapSelector.node)
-}, 10000)
-httpServer(getUnitStatuses)
-mqttClient(setStatus, setNewTimeout, getUnitStatus)
+httpServer(getUnitStatuses, createServiceLogger)
+mqttClient(setStatus, setNewTimeout, getUnitStatus, createServiceLogger)
