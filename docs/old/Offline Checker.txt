@@ -1,0 +1,10 @@
+title Offline Checker
+group interval
+Offline Checker->Mongo Streamer Table:Get expired Streamers
+Mongo Streamer Table->Offline Checker:Expired Streamers
+group for each expired streamer 
+Offline Checker->Mongo Status Table:Create new Status
+Offline Checker->Mongo Streamer Table:Update Status
+Offline Checker->fleet:MQTT status message
+end
+end

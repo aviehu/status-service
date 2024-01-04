@@ -1,0 +1,23 @@
+title Streamer Reports Status
+
+participant Streamer
+participant StatusStreamer App
+participant Streamer Table
+participant Status Table
+participant fleet
+participant WS App
+participant Client App
+
+Streamer->StatusStreamer App:MQTT Status message
+StatusStreamer App->Streamer Table: Get Streamer
+StatusStreamer App<-Streamer Table: Streamer / null
+note over StatusStreamer App: if null Throw Error and return
+alt Status changed or no status for streamer
+StatusStreamer App->Status Table:Create new Status
+StatusStreamer App->Streamer Table: Update Status
+else else
+StatusStreamer App->Status Table: Update Timestamp
+end
+StatusStreamer App-> fleet: MQTT Status message
+fleet->WS App:MQTT Status message
+WS App->Client App: WS message
