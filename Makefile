@@ -5,4 +5,4 @@ prod:
 	./docker/build_prod.sh
 
 tag:
-	./docker/tag_version.sh
+	./docker/tag_version.sh ${tag}
